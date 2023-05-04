@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MviSample</string>
+
+    <string name="main_screen_title">Pokemons List</string>
+</resources>

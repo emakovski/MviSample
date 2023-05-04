@@ -1,0 +1,112 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+apply plugin: 'kotlin-kapt'
+apply plugin: 'dagger.hilt.android.plugin'
+
+android {
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.makovsky.mvi"
+        minSdk 26
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
+        buildConfigField "String", "BASE_URL", "\"https://pokeapi.co/api/v2/\""
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary true
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = '11'
+        freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+    }
+    kapt {
+        correctErrorTypes true
+    }
+    buildFeatures {
+        compose true
+        // Disable unused AGP features
+        buildConfig true
+        aidl false
+        renderScript false
+        resValues false
+        shaders false
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.4.5'
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.10.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation "androidx.compose.ui:ui:1.4.3"
+    implementation "androidx.compose.material:material:1.4.3"
+    implementation "androidx.compose.ui:ui-tooling-preview:1.4.3"
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
+    implementation 'androidx.activity:activity-compose:1.7.1'
+    implementation 'androidx.navigation:navigation-compose:2.6.0-beta01'
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+
+    //dagger
+    implementation("com.google.dagger:dagger:2.44")
+    kapt("com.google.dagger:dagger-compiler:2.44")
+    //hilt
+    implementation "com.google.dagger:hilt-android:2.44"
+    kapt "com.google.dagger:hilt-compiler:2.44"
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+
+    //coroutines
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4"
+
+    //Retrofit
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+
+    //Client
+    implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.1'
+
+    //OkHttp Interceptor
+    implementation "com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.1"
+
+    //Gson
+    implementation 'com.google.code.gson:gson:2.9.1'
+
+    //Image loading
+    implementation 'io.coil-kt:coil:1.4.0'
+
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation "androidx.compose.ui:ui-test-junit4:1.4.3"
+    testImplementation 'junit:junit:4.+'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.4'
+    testImplementation "org.mockito:mockito-core:2.28.2"
+    debugImplementation "androidx.compose.ui:ui-tooling:1.4.3"
+    androidTestImplementation "org.jetbrains.kotlin:kotlin-test-junit:1.5.10"
+    testImplementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.20"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:1.5.10"
+}
