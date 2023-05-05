@@ -11,6 +11,7 @@ class MainScreenViewDataMapper @Inject constructor() {
             MainScreenItem.MainScreenPokemonItem(
                 pokemon.name,
                 pokemon.url,
+                pokemon.number
             )
         } ?: emptyList())
         return viewData

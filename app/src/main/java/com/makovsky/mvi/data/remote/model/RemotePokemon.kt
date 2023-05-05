@@ -10,5 +10,12 @@ class RemotePokemon {
     val url: String = ""
 }
 
-fun RemotePokemon.toPokemon(): Pokemon =
-    Pokemon(name, url)
+fun RemotePokemon.toPokemon(): Pokemon {
+    val number = url.substring(0, url.length - 1).substringAfterLast("/")
+    val formattedNumber = when (number.length) {
+        1 -> String.format("#00%s", number)
+        2 -> String.format("#0%s", number)
+        else -> String.format("#%s", number)
+    }
+    return Pokemon(name.uppercase(), url, formattedNumber)
+}

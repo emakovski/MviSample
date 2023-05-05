@@ -6,6 +6,7 @@ import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private val DarkColorPalette = darkColors(
     primary = Color.Blue,
@@ -35,7 +36,9 @@ fun MviSampleTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composa
     } else {
         LightColorPalette
     }
-
+    rememberSystemUiController().setSystemBarsColor(
+        color = Color.Red
+    )
     MaterialTheme(
         colors = colors,
         typography = Typography,
