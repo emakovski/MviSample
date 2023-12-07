@@ -7,14 +7,18 @@ import com.makovsky.mvi.utils.Either
 import javax.inject.Inject
 
 class GetAllPokemonsUseCase @Inject constructor(private val apiRepository: ApiRepository) :
-    BaseUseCase<List<Pokemon>, BaseUseCase.None>() {
+    BaseUseCase<List<Pokemon>, GetAllPokemonsUseCase.Param>() {
 
-    override suspend fun run(param: None): Either<Any, List<Pokemon>> {
+    override suspend fun run(param: Param): Either<Any, List<Pokemon>> {
         return try {
-            val pokemons = apiRepository.getAllPokemons() ?: listOf()
+            val pokemons = apiRepository.getAllPokemons(
+                limit = param.limit,
+                offset = param.offset
+            ) ?: listOf()
             Either.Right(pokemons)
         } catch (exception: Exception){
             Either.Left(onWrapException(exception))
         }
     }
+    data class Param (val limit: Int, val offset: Int)
 }

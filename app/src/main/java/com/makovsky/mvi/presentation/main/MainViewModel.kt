@@ -1,5 +1,6 @@
 package com.makovsky.mvi.presentation.main
 
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.makovsky.mvi.base.BaseUseCase
 import com.makovsky.mvi.base.BaseViewModel
@@ -13,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    getAllPokemonsUseCase: GetAllPokemonsUseCase,
+    private val getAllPokemonsUseCase: GetAllPokemonsUseCase,
     private val viewMapper: MainScreenViewDataMapper,
 ) : BaseViewModel<MainScreenState, MainScreenUiEvent>() {
 
@@ -25,14 +26,46 @@ class MainViewModel @Inject constructor(
     val timeMachine: TimeCapsule<MainScreenState>
         get() = reducer.timeCapsule
 
-    init {
-        getAllPokemonsUseCase.invoke(viewModelScope, BaseUseCase.None()){
-            it.either({}, ::onPokemonsLoaded)
+    private var offset: Int = 0
+
+    init { loadPokemons() }
+
+    fun loadPokemons(){
+        sendEvent(MainScreenUiEvent.LoadingStarted)
+        getAllPokemonsUseCase.invoke(viewModelScope, GetAllPokemonsUseCase.Param(
+            limit = LIMIT,
+            offset = offset
+        )){
+            it.either(::onError, ::onPokemonsLoaded)
         }
     }
 
-    private fun onPokemonsLoaded(pokemons: List<Pokemon>){
-        sendEvent(MainScreenUiEvent.ShowData(viewMapper.buildScreen(pokemons)))
+    private fun onError(any: Any){
+        Log.e(TAG, "loadPokemons(offset=$offset) failed")
+    }
+
+    private fun onPokemonsLoaded(newPortion: List<Pokemon>){
+        if (newPortion.isEmpty()){
+            sendEvent(MainScreenUiEvent.ShowLastData(viewMapper.buildScreen(newPortion)))
+        } else {
+            offset += newPortion.size
+            if (reducer.state.value.data.isEmpty()){
+                if (newPortion.size < LIMIT){
+                    sendEvent(MainScreenUiEvent.ShowLastData(viewMapper.buildScreen(newPortion)))
+                } else {
+                    sendEvent(MainScreenUiEvent.ShowData(viewMapper.buildScreen(newPortion)))
+                }
+            } else {
+                val pokemonsWithNewPortion = mutableListOf<MainScreenItem>()
+                pokemonsWithNewPortion.addAll(reducer.state.value.data)
+                pokemonsWithNewPortion.addAll(viewMapper.buildScreen(newPortion))
+                if (newPortion.size < LIMIT){
+                    sendEvent(MainScreenUiEvent.ShowLastData(pokemonsWithNewPortion))
+                } else {
+                    sendEvent(MainScreenUiEvent.ShowData(pokemonsWithNewPortion))
+                }
+            }
+        }
     }
 
     private fun sendEvent(event: MainScreenUiEvent) {
@@ -42,10 +75,21 @@ class MainViewModel @Inject constructor(
     private class MainReducer(initial: MainScreenState) : Reducer<MainScreenState, MainScreenUiEvent>(initial) {
         override fun reduce(oldState: MainScreenState, event: MainScreenUiEvent) {
             when (event) {
+                is MainScreenUiEvent.LoadingStarted -> {
+                    setState(oldState.copy(isLoading = true))
+                }
                 is MainScreenUiEvent.ShowData -> {
                     setState(oldState.copy(isLoading = false, data = event.items))
                 }
+                is MainScreenUiEvent.ShowLastData -> {
+                    setState(oldState.copy(isLoading = false, data = event.items, allPokemonsLoaded = true))
+                }
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "MainViewModel"
+        private const val LIMIT = 10
     }
 }

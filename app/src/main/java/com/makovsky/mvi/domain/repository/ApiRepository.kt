@@ -8,5 +8,6 @@ import javax.inject.Inject
 class ApiRepository @Inject constructor(
     private val apiServices: ApiServices,
 ) {
-    suspend fun getAllPokemons(): List<Pokemon>? = apiServices.getAllPokemons().toAllPokemonsList()
+    suspend fun getAllPokemons(limit: Int, offset: Int): List<Pokemon>? =
+        apiServices.getAllPokemons(limit, offset).toAllPokemonsList()
 }
