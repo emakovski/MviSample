@@ -2,6 +2,7 @@ package com.makovsky.mvi.presentation.main
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,12 +29,17 @@ import com.makovsky.mvi.R
 import com.makovsky.mvi.base.TimeCapsule
 import com.makovsky.mvi.base.TimeTravelCapsule
 import com.makovsky.mvi.domain.entities.Pokemon
+import com.makovsky.mvi.presentation.common.Progress
+import com.makovsky.mvi.presentation.common.Toolbar
 import com.makovsky.mvi.ui.theme.MviSampleTheme
 import com.makovsky.mvi.utils.debugInputPointer
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
+fun MainScreen(
+    viewModel: MainViewModel,
+    navToPokemon: (String) -> Unit,
+) {
     val state by viewModel.state.collectAsState()
 
     MainScreenContentWithProgress(
@@ -42,6 +48,7 @@ fun MainScreen(viewModel: MainViewModel) {
         allPokemonsLoaded = state.allPokemonsLoaded,
         loadMore = { viewModel.loadPokemons() },
         data = state.data,
+        navToPokemon = navToPokemon
     )
 }
 
@@ -51,59 +58,24 @@ private fun MainScreenContentWithProgress(
     isLoading: Boolean,
     allPokemonsLoaded: Boolean,
     loadMore: () -> Unit,
-    data: List<MainScreenItem>
+    data: List<MainScreenItem>,
+    navToPokemon: (String) -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()){
         if (data.isNotEmpty()) MainScreenContent(
             pokemons = data,
             loadMore = loadMore,
             isLoading = isLoading,
-            allPokemonsLoaded = allPokemonsLoaded
+            allPokemonsLoaded = allPokemonsLoaded,
+            navToPokemon = navToPokemon
         )
-        Toolbar(timeMachine)
-        if (isLoading) ContentWithProgress()
-    }
-}
-
-@Composable
-private fun Toolbar(timeMachine: TimeCapsule<MainScreenState>) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-    ) {
-        Row(
-            modifier = Modifier
-                .height(56.dp)
-                .background(color = Color.Red)
-                .fillMaxWidth()
-                .debugInputPointer(LocalContext.current, timeMachine),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(id = R.string.main_screen_title),
-                color = Color.White,
-                fontSize = 22.sp,
-                style = MaterialTheme.typography.h1
-            )
-        }
-        Row(
-            modifier = Modifier
-                .height(22.dp)
-                .fillMaxWidth()
-                .background(color = Color.DarkGray),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Canvas(modifier = Modifier
-                .size(48.dp),
-                onDraw = {
-                    drawCircle(Color.DarkGray, radius = 63f)
-                    drawCircle(Color.White, radius = 42f)
-                    drawCircle(Color.DarkGray, radius = 21f)
-                })
-        }
+        Toolbar(
+            timeMachine = timeMachine,
+            title = stringResource(id = R.string.main_screen_title),
+            hasBackButton = false,
+            navBack = {}
+        )
+        if (isLoading) Progress()
     }
 }
 
@@ -112,7 +84,8 @@ private fun MainScreenContent(
     pokemons: List<MainScreenItem>,
     loadMore: () -> Unit,
     isLoading: Boolean,
-    allPokemonsLoaded: Boolean
+    allPokemonsLoaded: Boolean,
+    navToPokemon: (String) -> Unit,
 ) {
     val page = remember { mutableStateOf(1) }
     val state = rememberLazyListState()
@@ -123,7 +96,7 @@ private fun MainScreenContent(
         items(pokemons) { item ->
             when (item) {
                 is MainScreenItem.MainScreenPokemonItem -> {
-                    PokemonListItem(item = item)
+                    PokemonListItem(item = item, navToPokemon = navToPokemon)
                 }
             }
         }
@@ -147,6 +120,7 @@ private fun MainScreenContent(
 @Composable
 private fun PokemonListItem(
     item: MainScreenItem.MainScreenPokemonItem,
+    navToPokemon: (String) -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -155,7 +129,8 @@ private fun PokemonListItem(
             .background(
                 Color.White,
                 shape = RoundedCornerShape(8.dp)
-            ),
+            )
+            .clickable(enabled = true) { navToPokemon(item.name) },
         elevation = 2.dp
     ) {
         Column(
@@ -194,24 +169,6 @@ private fun PokemonListItem(
     }
 }
 
-@Composable
-private fun ContentWithProgress() {
-    Surface(color = Color.Red.copy(alpha = 0.2f)) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = Color.Red)
-        }
-    }
-}
-
-data class MyState(
-    val isShowProgressBar: Boolean,
-    val error: Throwable? = null,
-    val data: List<Pokemon>
-)
-
 @Preview(showSystemUi = true)
 @Composable
 private fun MainScreenContentPreview() {
@@ -247,7 +204,8 @@ private fun MainScreenContentPreview() {
                     url = "",
                     number = "#001"
                 ),
-            )
+            ),
+            navToPokemon = {}
         )
     }
 }
