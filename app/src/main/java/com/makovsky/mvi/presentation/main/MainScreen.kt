@@ -1,38 +1,48 @@
 package com.makovsky.mvi.presentation.main
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.Card
+import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.makovsky.mvi.R
 import com.makovsky.mvi.base.TimeCapsule
 import com.makovsky.mvi.base.TimeTravelCapsule
-import com.makovsky.mvi.domain.entities.Pokemon
+import com.makovsky.mvi.presentation.common.BottomView
 import com.makovsky.mvi.presentation.common.Progress
 import com.makovsky.mvi.presentation.common.Toolbar
 import com.makovsky.mvi.ui.theme.MviSampleTheme
-import com.makovsky.mvi.utils.debugInputPointer
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -61,21 +71,35 @@ private fun MainScreenContentWithProgress(
     data: List<MainScreenItem>,
     navToPokemon: (String) -> Unit,
 ) {
+    var expanded by remember { mutableStateOf(true) }
+    var pokemonToOpen by remember { mutableStateOf("") }
+
+    LaunchedEffect(key1 = isLoading){
+        if (!isLoading) expanded = false
+    }
     Box(modifier = Modifier.fillMaxSize()){
         if (data.isNotEmpty()) MainScreenContent(
             pokemons = data,
             loadMore = loadMore,
             isLoading = isLoading,
             allPokemonsLoaded = allPokemonsLoaded,
-            navToPokemon = navToPokemon
+            navToPokemon = { pokemon ->
+                pokemonToOpen = pokemon
+                expanded = !expanded
+            }
         )
+        if (isLoading) Progress()
         Toolbar(
             timeMachine = timeMachine,
             title = stringResource(id = R.string.main_screen_title),
             hasBackButton = false,
-            navBack = {}
+            navBack = {},
+            backClicked = {},
+            pokemon = pokemonToOpen,
+            pokemonClicked = navToPokemon,
+            expanded = expanded
         )
-        if (isLoading) Progress()
+        BottomView(expanded = expanded)
     }
 }
 
@@ -91,12 +115,37 @@ private fun MainScreenContent(
     val state = rememberLazyListState()
     LazyColumn(
         state = state,
-        modifier = Modifier.padding(top = 80.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(
+                top = 66.dp,
+                bottom = 66.dp
+            )
+            .background(Color.DarkGray)
     ) {
-        items(pokemons) { item ->
+        itemsIndexed(pokemons) { index, item ->
+            val animatableAlpha = remember { Animatable(0f) }
+            val isVisible = remember {
+                derivedStateOf {
+                    state.firstVisibleItemIndex <= index
+                }
+            }
+
+            LaunchedEffect(isVisible.value) {
+                if (isVisible.value) {
+                    animatableAlpha.animateTo(
+                        1f, animationSpec = tween(durationMillis = 1000)
+                    )
+
+                }
+            }
             when (item) {
                 is MainScreenItem.MainScreenPokemonItem -> {
-                    PokemonListItem(item = item, navToPokemon = navToPokemon)
+                    PokemonListItem(
+                        item = item,
+                        navToPokemon = navToPokemon,
+                        alpha = animatableAlpha.value
+                    )
                 }
             }
         }
@@ -121,6 +170,7 @@ private fun MainScreenContent(
 private fun PokemonListItem(
     item: MainScreenItem.MainScreenPokemonItem,
     navToPokemon: (String) -> Unit,
+    alpha: Float
 ) {
     Card(
         modifier = Modifier
@@ -135,7 +185,7 @@ private fun PokemonListItem(
     ) {
         Column(
             modifier = Modifier
-                .background(color = Color.Red.copy(alpha = 0.5f)),
+                .background(color = Color.Red.copy(alpha = alpha)),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -183,6 +233,11 @@ private fun MainScreenContentPreview() {
                     name = "Pikachu-Pikachu-Pikachu-Pikachu-Pikachu",
                     url = "",
                     number = "#10000"
+                ),
+                MainScreenItem.MainScreenPokemonItem(
+                    name = "Pikachu",
+                    url = "",
+                    number = "#001"
                 ),
                 MainScreenItem.MainScreenPokemonItem(
                     name = "Pikachu",

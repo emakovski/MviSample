@@ -8,6 +8,18 @@ data class RemotePokemonDetails (
     val id: Int,
     @SerializedName("name")
     val name: String,
+    @SerializedName("base_experience")
+    val baseExperience: Int,
+    @SerializedName("order")
+    val order: Int,
+    @SerializedName("height")
+    val height: Int,
+    @SerializedName("weight")
+    val weight: Int,
+    @SerializedName("types")
+    val types: List<RemoteType>,
+    @SerializedName("stats")
+    val stats: List<RemoteStat>,
     @SerializedName("sprites")
     val sprites: RemoteSprites,
 )
@@ -15,5 +27,11 @@ data class RemotePokemonDetails (
 fun RemotePokemonDetails.toPokemonDetails(): PokemonDetails = PokemonDetails(
     id,
     name,
+    baseExperience,
+    order,
+    height,
+    weight,
+    types.map { it.toType() },
+    stats.map { it.toStat() },
     sprites.toSprites()
 )
